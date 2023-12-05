@@ -133,8 +133,8 @@ func part2() int {
 	// have a running queue based on the results of winning cards
 	for cardNum, card := range cards {
         sum += nCards[cardNum]
+		nWinners := card.countWinners()
 		for i := 0; i < nCards[cardNum]; i++ {
-			nWinners := card.countWinners()
 			for j := 0; j < nWinners; j++ {
 				nCards[j+cardNum+1]++
 			}
