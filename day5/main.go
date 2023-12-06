@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"sync"
 	"unicode"
 )
 
@@ -185,23 +186,53 @@ func part2() int {
 	scanner := bufio.NewScanner(file)
 	seeds, maps := parse2(scanner)
 	minLoc := int(^uint(0) >> 1)
-    total := len(seeds)
-	for j, seed := range seeds {
-		rng := seed.length / 10
-		for i := seed.start; i < seed.start+seed.length; i++ {
-			//fmt.Println(i)
-			loc := calcLocation(i, &maps) // TODO
-			minLoc = min(loc, minLoc)
-			if (i-seed.length)%rng == 0 {
-				fmt.Println((i-seed.start)/rng * 10, "% done ", j+1, " / ", total)
+	var wg sync.WaitGroup
+	jobch := make(chan int)
+	resch := make(chan int)
+	for i := 0; i < len(seeds); i++ {
+		wg.Add(1)
+		go func() {
+            fmt.Println("Spawned")
+			minLoc := int(^uint(0) >> 1)
+			for i := range jobch {
+				loc := calcLocation(i, &maps)
+				minLoc = min(loc, minLoc)
 			}
-		}
+			resch <- minLoc
+			wg.Done()
+		}()
+	}
+	// wait until all are done, then close channel
+	go func() {
+		wg.Wait()
+		close(resch)
+	}()
+	// send all jobs out, then close channel
+	var wg2 sync.WaitGroup
+	for j := 0; j < len(seeds); j++ {
+		wg2.Add(1)
+		go func(seed *Seed) {
+            fmt.Println("N to send: ", seed.length)
+			for i := seed.start; i < seed.start+seed.length; i++ {
+				jobch <- i
+			}
+            fmt.Println("Sent")
+			wg2.Done()
+		}(&(seeds[j]))
+	}
+	go func() {
+		wg2.Wait()
+		close(jobch)
+	}()
+	// receive mins and calculate overall min
+	for i := range resch {
+		minLoc = min(minLoc, i)
 	}
 
 	return minLoc
 }
 
 func main() {
-	fmt.Println("Part 1: ", part1())
+	//fmt.Println("Part 1: ", part1())
 	fmt.Println("Part 2: ", part2())
 }
