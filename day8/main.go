@@ -124,6 +124,23 @@ func parse(scanner *bufio.Scanner) (Directions, map[string]Node) {
 	return directions, m
 }
 
+type qualifier func(string) bool
+
+func countSteps(d Directions, m map[string]Node, key string, fn qualifier) int {
+	count := 0
+	for ; !fn(key); count++ {
+		turnRight := d.next()
+		cur := m[key]
+		if turnRight {
+			key = cur.right
+		} else {
+			key = cur.left
+		}
+	}
+	// iterate through hands and multiply position (rank) by bid
+	return count
+}
+
 func part1() int {
 	file, err := os.Open("input.txt")
 	if err != nil {
@@ -133,24 +150,23 @@ func part1() int {
 	scanner := bufio.NewScanner(file)
 	// parse into hand and bid
 	d, m := parse(scanner)
-	key := "AAA"
-	count := 0
-	for ; key != "ZZZ"; count++ {
-		turnRight := d.next()
-		cur := m[key]
-		if turnRight {
-			key = cur.right
-		} else {
-			key = cur.left
-		}
-	}
+	return countSteps(d, m, "AAA", func(key string) bool { return key == "ZZZ" })
+}
 
-	// iterate through hands and multiply position (rank) by bid
-	return count
+func lcm(a int, b int) int {
+	out := max(a, b)
+	maxn := out
+	for true {
+		if out%a == 0 && out%b == 0 {
+			break
+		}
+		out += maxn
+	}
+	return out
 }
 
 func part2() int {
-    file, err := os.Open("input.txt")
+	file, err := os.Open("input.txt")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -159,35 +175,26 @@ func part2() int {
 	// parse into hand and bid
 	d, m := parse(scanner)
 	keys := []string{}
-	for key, _ := range m {
+	for key := range m {
 		if key[2] == 'A' {
 			keys = append(keys, key)
 		}
 	}
-	count := 0
-    allEndInZ := false
-	for ; !allEndInZ; count++ {
-		turnRight := d.next()
-        theseEndInZ := true
-		for i, key := range keys {
-			cur := m[key]
-			if turnRight {
-				keys[i] = cur.right
-			} else {
-				keys[i] = cur.left
-			}
-            if keys[i][2] != 'Z' {
-                theseEndInZ = false
-            }
-		}
-        allEndInZ = theseEndInZ
+	multiples := []int{}
+	for _, key := range keys {
+        // Count the steps it takes for each 'XXA' node to get to its 'XXZ' node.
+		multiples = append(multiples, countSteps(d, m, key, func(key string) bool { return key[2] == 'Z' }))
 	}
-
-	// iterate through hands and multiply position (rank) by bid
-	return count
+	out := multiples[0]
+	for _, loop := range multiples[1:] {
+        // Take the Least Common Multiple between the last number and the next in the series.
+        // The result will be the number of iterations necessary for all to match at once
+		out = lcm(out, loop)
+	}
+	return out
 }
 
 func main() {
 	fmt.Println("Part 1: ", part1())
-	fmt.Println("Part 1: ", part2())
+	fmt.Println("Part 2: ", part2())
 }
