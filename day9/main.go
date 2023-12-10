@@ -6,10 +6,8 @@ import (
 	"log"
 	"os"
 	"strconv"
-	"unicode"
 )
 
-// TODO: Make into a parsing package
 type advance func(rune) bool
 
 func advanceTil(line *string, cur int, fn advance) int {
@@ -18,35 +16,9 @@ func advanceTil(line *string, cur int, fn advance) int {
 	}
 	return next
 }
-func isLetter(r rune) bool {
-	return unicode.IsLetter(r)
-}
-func isNotLetter(r rune) bool {
-	return !unicode.IsLetter(r)
-}
 func isSpace(r rune) bool {
 	return r == ' '
 }
-func isDigit(r rune) bool {
-	return unicode.IsDigit(r)
-}
-func isNotDigit(r rune) bool {
-	return !unicode.IsDigit(r)
-}
-func isLetterOrDigit(r rune) bool {
-	return isLetter(r) || isDigit(r)
-}
-func isNotLetterOrDigit(r rune) bool {
-	return !isLetterOrDigit(r)
-}
-func isRParentheses(r rune) bool {
-	return r != ')'
-}
-func isComma(r rune) bool {
-	return r == ','
-}
-
-// ^^^TODO: Make into a parsing package
 
 type Sequence []int
 
